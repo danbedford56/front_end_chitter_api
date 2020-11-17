@@ -1,0 +1,93 @@
+<head>
+</head>
+
+<body>
+  <h3> Sign up </h3>
+  <label for="username">Username:</label>
+  <input type="text" id="username_input1" name="username"/>
+  <label for="password">Password:</label>
+  <input type="text" id="password_input1" name="password"/>
+  <button type='button' id='sign_up_button'>Sign up</button>
+  <h3> Sign in </h3>
+  <label for="username">Username:</label>
+  <input type="text" id="username_input2" name="username">
+  <label for="password">Password:</label>
+  <input type="text" id="password_input2" name="password">
+  <button type='button' id='sign_in_button'>Sign in</button>
+  <p>Session key:</p>
+  <div id="session_key"></div>
+  <p>User id:</p>
+  <h3> Peeeps </h3>
+  <div id="peeps"></div>
+  <input type="text" id="peep_input">
+  <button type="button" id="peep_send">Add peep</button>
+
+  <script type="text/javascript">
+    var session_key;
+    var user_id;
+
+    function setEvents(){
+      document.getElementById('sign_in_button').addEventListener('click', this.sign_in.bind(this));
+      document.getElementById('sign_up_button').addEventListener('click', this.addUser.bind(this));
+      document.getElementById('peep_send').addEventListener('click', this.addPeep.bind(this), this.displayPeeps.bind(this));
+    }
+
+    async function postData(url, data){
+      var token = 'Token token=' + session_key
+      console.log(token);
+      const response = await fetch(url,{
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token
+        },
+        body: JSON.stringify(data),
+      });
+      return response.json();
+    }
+
+    function addUser(){
+      var username = document.getElementById("username_input1").value;
+      var password = document.getElementById("password_input1").value;
+      var data = {"user": {"handle":username, "password":password}};
+      postData('https://chitter-backend-api-v2.herokuapp.com/users', data);
+    }
+
+    async function sign_in(){
+      var username = document.getElementById("username_input2").value;
+      var password = document.getElementById("password_input2").value;
+      var data = {"session": {"handle":username, "password":password}}
+      let response = await postData('https://chitter-backend-api-v2.herokuapp.com/sessions', data);
+      document.getElementById("session_key").innerHTML = response['session_key'];
+      session_key = response['session_key'];
+      user_id = response['user_id'];
+    }
+    
+    function addPeep(){
+      var peep = document.getElementById("peep_input").value;
+      data = {'peep': {'user_id':user_id, 'body':peep}}
+      postData('https://chitter-backend-api-v2.herokuapp.com/peeps', data)
+    }
+
+    function getData(url){
+      var peeps;
+      data = fetch(url)
+        .then(response => response.json())
+      return data;
+    }
+
+    async function displayPeeps(){
+      let peeps = await getData('https://chitter-backend-api-v2.herokuapp.com/peeps');
+      console.log(peeps);
+      e = "<ul>"
+      for (var i=0; i < peeps.length; i++){
+        e += "<li>" + peeps[i]['body'] + " -- " + peeps[i]['user']['handle'] + " -- Date created: " + peeps[i]['created_at'] + "</li>";
+      }
+      e += "</ul>"
+      document.getElementById("peeps").innerHTML = e;
+    }
+
+    setEvents();
+    displayPeeps();
+  </script>
+</body>
